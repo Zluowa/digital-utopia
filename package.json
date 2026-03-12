@@ -1,0 +1,56 @@
+{
+  "name": "digital-utopia",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Digital Utopia Civilization - AI agent society simulator",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tishi-tech/digital-utopia.git"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "create-utopia": "packages/create-utopia/index.mjs"
+  },
+  "scripts": {
+    "build": "npx tsc -p engine && npx tsc -p economy-gateway",
+    "build:engine": "npx tsc -p engine",
+    "build:economy": "npx tsc -p economy-gateway",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "test:e2e": "vitest run tests/e2e",
+    "lint": "eslint src --ext .ts",
+    "economy-gateway:dev": "tsx economy-gateway/src/index.ts",
+    "economy-gateway:build": "tsc -p economy-gateway/tsconfig.json",
+    "create-world": "tsx src/cli/create-world.ts",
+    "start-agent": "tsx src/cli/start-agent.ts",
+    "dashboard": "npm run build:frontend && tsx src/observer/server.ts",
+    "build:frontend": "npm --prefix frontend-new run build"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0",
+    "chokidar": "^3.5.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "nanoid": "^5.0.4",
+    "playwright": "^1.58.2",
+    "ws": "^8.16.0",
+    "yaml": "^2.8.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "@types/ws": "^8.5.10",
+    "tsx": "^4.6.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "license": "MIT"
+}

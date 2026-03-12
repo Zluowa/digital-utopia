@@ -1,0 +1,28 @@
+# @input: Dockerfile + Dockerfile.dashboard + nginx.conf
+# @output: engine (4000) + dashboard (3000)
+# @position: One-command Docker deployment for Digital Utopia
+
+services:
+  engine:
+    build: .
+    ports:
+      - "${PORT:-4000}:4000"
+    environment:
+      WORLD: ${WORLD:-genesis}
+      AGENTS: ${AGENTS:-alice,bob,charlie}
+    volumes:
+      - world-data:/app/worlds
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - engine
+    restart: unless-stopped
+
+volumes:
+  world-data:

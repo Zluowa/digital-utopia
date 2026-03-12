@@ -1,0 +1,6 @@
+node_modules
+.git
+*.log
+.awakening
+.awaken-log.txt
+.world-spec.json

@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime and generated state
+logs/
+outbox/
+commons/
+charlie/
+specs/
+worlds/
+dist/
+coverage/
+*.log
+*.pid
+
+# Temp artifacts
+.tmp*/
+tmp*/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

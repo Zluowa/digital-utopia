@@ -1,0 +1,33 @@
+name: Health Check
+
+on:
+  schedule:
+    # 每5分钟检查一次
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    # 手动触发
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Manhua service
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://aitiaojiushi.com || echo "000")
+          echo "Manhua status: $response"
+          if [ "$response" != "200" ]; then exit 1; fi
+
+      - name: Check Ark service
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/v1/platform || echo "000")
+          echo "Ark status: $response"
+
+      - name: Check DU Engine
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4000/api/health || echo "000")
+          echo "DU Engine status: $response"
+
+      - name: Report status
+        if: always()
+        run: |
+          echo "Health check completed at $(date)"

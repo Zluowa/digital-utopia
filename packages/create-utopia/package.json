@@ -1,0 +1,33 @@
+{
+  "name": "create-utopia",
+  "version": "0.3.0",
+  "description": "Create an AI agent civilization in 30 seconds",
+  "type": "module",
+  "bin": {
+    "create-utopia": "index.mjs"
+  },
+  "files": [
+    "index.mjs"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "civilization",
+    "digital-utopia",
+    "claude",
+    "multi-agent",
+    "simulation",
+    "economy",
+    "openclaw"
+  ],
+  "author": "Tishi Tech <hello@tishi.tech>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tishi-tech/digital-utopia"
+  },
+  "homepage": "https://github.com/tishi-tech/digital-utopia#readme"
+}

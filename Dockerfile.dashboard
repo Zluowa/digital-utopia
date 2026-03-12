@@ -1,0 +1,16 @@
+# @input: frontend-new/ source + shared/ types
+# @output: nginx serving built dashboard on port 3000, proxying /api to engine
+# @position: Dashboard container for docker-compose
+
+FROM node:20-slim AS build
+WORKDIR /app/frontend-new
+COPY frontend-new/package*.json ./
+RUN npm install
+COPY frontend-new/ ./
+COPY shared/ /app/shared/
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=build /app/frontend-new/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 3000

@@ -1,0 +1,32 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Install engine deps
+        run: npm install
+        working-directory: engine
+      - name: Type check
+        run: npx tsc --noEmit
+        working-directory: engine
+      - name: Bootstrap test
+        run: npx tsx src/bootstrap-cli.ts test-world alice bob
+        working-directory: engine
+      - name: Verify world created
+        run: |
+          test -f worlds/test-world/.world/config.json
+          test -d worlds/test-world/children/alice
+          test -d worlds/test-world/children/bob
