@@ -1,0 +1,51 @@
+name: Agent Showcase
+description: Share an agent or configuration you built with Digital Utopia
+title: "[Showcase]: "
+labels: ["showcase", "community"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Built something cool with Digital Utopia? Show the community!
+
+  - type: input
+    id: agent-name
+    attributes:
+      label: Agent / World name
+      placeholder: "e.g., 'Financial Optimizer Agent' or 'University World'"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What does it do?
+      description: Describe your agent or configuration
+    validations:
+      required: true
+
+  - type: textarea
+    id: interesting
+    attributes:
+      label: Most interesting behavior observed
+      description: What emergent or unexpected behaviors did you see?
+    validations:
+      required: true
+
+  - type: input
+    id: repo-link
+    attributes:
+      label: Repository or Gist link (optional)
+      placeholder: "https://github.com/..."
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Research / Experiment
+        - Business Simulation
+        - Game / Entertainment
+        - Educational
+        - Production Use
+        - Other
