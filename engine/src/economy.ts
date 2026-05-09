@@ -243,11 +243,54 @@ export async function creditTreasury(worldDir: string, amount: number, reason: s
 }
 
 export async function appendLedger(ledgerPath: string, tx: Transaction): Promise<void> {
-  let ledger: Transaction[] = [];
-  if (existsSync(ledgerPath)) ledger = JSON.parse(await fs.readFile(ledgerPath, 'utf-8'));
-  ledger.unshift(tx);
-  if (ledger.length > 1000) ledger = ledger.slice(0, 1000);
-  await fs.writeFile(ledgerPath, JSON.stringify(ledger, null, 2));
+  const lock = `${ledgerPath}.lock`;
+  await withLock(lock, async () => {
+    let ledger: Transaction[] = [];
+    if (existsSync(ledgerPath)) ledger = await readLedger(ledgerPath, true);
+    ledger.unshift(tx);
+    if (ledger.length > 1000) ledger = ledger.slice(0, 1000);
+    await fs.writeFile(ledgerPath, JSON.stringify(ledger, null, 2));
+  });
+}
+
+async function readLedger(ledgerPath: string, repair = false): Promise<Transaction[]> {
+  if (!existsSync(ledgerPath)) return [];
+  const raw = await fs.readFile(ledgerPath, 'utf-8');
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed as Transaction[] : [];
+  } catch {
+    const recovered = recoverJsonArray(raw);
+    if (!recovered) throw new Error(`Ledger is not recoverable: ${ledgerPath}`);
+    if (repair) {
+      const backup = `${ledgerPath}.corrupt-${Date.now()}.bak`;
+      await fs.copyFile(ledgerPath, backup);
+      await fs.writeFile(ledgerPath, JSON.stringify(recovered, null, 2));
+    }
+    return recovered as Transaction[];
+  }
+}
+
+function recoverJsonArray(raw: string): unknown[] | null {
+  const start = raw.indexOf('[');
+  if (start < 0) return null;
+  let depth = 0, inString = false, escape = false;
+  for (let i = start; i < raw.length; i++) {
+    const ch = raw[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\') { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '[') depth++;
+    else if (ch === ']') {
+      depth--;
+      if (depth === 0) {
+        const parsed = JSON.parse(raw.slice(start, i + 1));
+        return Array.isArray(parsed) ? parsed : null;
+      }
+    }
+  }
+  return null;
 }
 
 // ── Physics & Economy summary ──────────────────────────────
@@ -273,7 +316,7 @@ export async function getEconomySummary(worldDir: string, agentDirs: { id: strin
   for (const d of dist) d.pct = circ > 0 ? Math.round((d.balance / circ) * 1000) / 10 : 0;
   dist.sort((a, b) => b.balance - a.balance);
   const tp = treasuryPath(worldDir), lp = path.join(worldDir, '.world', 'ledger.json');
-  return { treasuryBalance: existsSync(tp) ? (JSON.parse(await fs.readFile(tp, 'utf-8')).balance ?? 0) : 0, circulation: circ, transactionCount: existsSync(lp) ? (JSON.parse(await fs.readFile(lp, 'utf-8')) as Transaction[]).length : 0, distribution: dist };
+  return { treasuryBalance: existsSync(tp) ? (JSON.parse(await fs.readFile(tp, 'utf-8')).balance ?? 0) : 0, circulation: circ, transactionCount: (await readLedger(lp)).length, distribution: dist };
 }
 
 export async function transferWithTax(
@@ -293,8 +336,7 @@ export async function transferWithTax(
 
 export async function getTransactions(worldDir: string, limit = 50): Promise<Transaction[]> {
   const ledgerPath = path.join(worldDir, '.world', 'ledger.json');
-  if (!existsSync(ledgerPath)) return [];
-  return (JSON.parse(await fs.readFile(ledgerPath, 'utf-8')) as Transaction[]).slice(0, limit);
+  return (await readLedger(ledgerPath)).slice(0, limit);
 }
 
 export async function treasuryPay(

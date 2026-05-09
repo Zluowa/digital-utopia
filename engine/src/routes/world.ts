@@ -28,6 +28,16 @@ export function registerWorldRoutes(
 ): void {
   app.get('/api/health', (_r, res) => res.json({ ok: true }));
 
+  app.get('/api/info', (_r, res) => {
+    const engine = context.getEngine();
+    res.json({
+      ok: true,
+      world: path.basename(engine.worldDir),
+      name: engine.config.name,
+      agents: engine.registry.all().length,
+    });
+  });
+
   app.get('/api/snapshot', async (_r, res) => res.json(await context.getEngine().snapshot()));
 
   app.get('/api/tree', async (_r, res) => {

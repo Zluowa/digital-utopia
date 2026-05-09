@@ -344,7 +344,7 @@ export class Engine extends EventEmitter {
     ).catch(() => 0);
     if (delivered > 0) this.pushEvent('postman', `Startup catch-up delivered ${delivered} messages`);
     this.startHeartbeat();
-    this.startSurvivalCostTimer();
+    await this.startSurvivalCostTimer();
     await this.initGmInbox();
     this.pushEvent('world-started', `World "${this.config.name}" online`);
   }
@@ -395,13 +395,13 @@ export class Engine extends EventEmitter {
   }
 
   /** Deduct daily survival cost from all alive agents — proposal L97-109 */
-  private startSurvivalCostTimer(): void {
+  private async startSurvivalCostTimer(): Promise<void> {
     const cost = this.config.physics.economy.dailySurvivalCost ?? 0;
     if (cost <= 0) return;
     const intervalMs = 24 * 60 * 60 * 1000; // once per day
-    this.survivalTimer = setInterval(() => void this.deductSurvivalCosts(cost), intervalMs);
+    this.survivalTimer = setInterval(() => void this.deductSurvivalCostsIfDue(cost), intervalMs);
     // Also run once at startup (prorated or full — full for simplicity)
-    void this.deductSurvivalCosts(cost);
+    await this.deductSurvivalCostsIfDue(cost);
   }
 
   private async deductSurvivalCosts(cost: number): Promise<void> {
@@ -416,6 +416,44 @@ export class Engine extends EventEmitter {
         this.pushEvent('survival-cost', `${r.agentId} -${r.deducted}T survival (remaining: ${r.remaining})`);
       }
     }
+  }
+
+  private async deductSurvivalCostsIfDue(cost: number): Promise<void> {
+    const statePath = path.join(this.worldDir, '.world', 'survival-state.json');
+    const last = await this.lastSurvivalDeductedAt(statePath);
+    const dayMs = 24 * 60 * 60 * 1000;
+    if (last && Date.now() - last.getTime() < dayMs) return;
+
+    await this.deductSurvivalCosts(cost);
+    await fs.writeFile(statePath, JSON.stringify({
+      lastDeductedAt: new Date().toISOString(),
+      costPerAgent: cost,
+    }, null, 2));
+  }
+
+  private async lastSurvivalDeductedAt(statePath: string): Promise<Date | null> {
+    if (existsSync(statePath)) {
+      try {
+        const state = JSON.parse(await fs.readFile(statePath, 'utf-8')) as { lastDeductedAt?: string };
+        if (state.lastDeductedAt) return new Date(state.lastDeductedAt);
+      } catch {}
+    }
+
+    let latest = 0;
+    for (const agent of this.registry.all()) {
+      const walletPath = path.join(agent.dir, '.claude', 'wallet', 'balance.json');
+      if (!existsSync(walletPath)) continue;
+      try {
+        const wallet = JSON.parse(await fs.readFile(walletPath, 'utf-8')) as {
+          transactions?: Array<{ reason?: string; timestamp?: string }>;
+        };
+        for (const tx of wallet.transactions ?? []) {
+          if (tx.reason !== 'daily survival cost' || !tx.timestamp) continue;
+          latest = Math.max(latest, Date.parse(tx.timestamp) || 0);
+        }
+      } catch {}
+    }
+    return latest > 0 ? new Date(latest) : null;
   }
 
   private async checkEconomicWakeTriggers(): Promise<void> {

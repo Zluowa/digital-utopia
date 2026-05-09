@@ -74,6 +74,9 @@ export default defineConfig({
       shared: path.resolve(__dirname, '../shared'),
     },
   },
+  optimizeDeps: {
+    holdUntilCrawlEnd: false,
+  },
   server: {
     host: true,
     port: parseInt(process.env.FRONTEND_PORT || '3000'),
